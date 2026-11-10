@@ -33,8 +33,6 @@ java scripts/MakeFrame.java batch.bin scripts/samples/payload_a.hex scripts/samp
 java scripts/MakeFrame.java --raw a.bin scripts/samples/payload_a.hex
 ```
 
-Upload them (on Windows PowerShell use `curl.exe`, because plain `curl` is an alias for something else):
-
 ```bash
 # three payloads in one batch
 curl -i -X POST http://localhost:8080/v1/batches -H "Content-Type: application/x-sift-batch" --data-binary "@scripts/payload/batch.bin"
@@ -84,7 +82,7 @@ docker compose exec postgres psql -U sift -d sift -c "SELECT batch_id, idx, size
 | http://localhost:8080/swagger-ui.html | Swagger UI: browse the API and try uploads (pick a `.bin` file as the body) |
 | http://localhost:8080/v3/api-docs | The OpenAPI 3 spec as JSON, for generating clients |
 | http://localhost:8080/actuator/health | `UP`/`DOWN`, including the database and disk space |
-| http://localhost:8080/actuator/health/liveness, `/readiness` | Probes for Docker / Kubernetes |
+| http://localhost:8080/actuator/health/liveness | Probes for Docker / Kubernetes |
 | http://localhost:8080/actuator/info | Version, build time, Java runtime |
 
 No other actuator endpoints are exposed.
