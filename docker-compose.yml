@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sift
+      POSTGRES_USER: ${POSTGRES_USER:-sift}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sift}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # named volume: works the same on Windows, macOS and Linux
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-sift} -d sift"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  sift:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/sift
+      DB_USER: ${POSTGRES_USER:-sift}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-sift}
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${LOG_FORMAT:-ecs}   # JSON logs for log tools; LOG_FORMAT=logstash also works
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

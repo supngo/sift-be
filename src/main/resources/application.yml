@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: sift
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sift}
+    username: ${DB_USER:sift}
+    password: ${DB_PASSWORD:sift}
+  mvc:
+    problemdetails:
+      enabled: true      # framework errors (e.g. 415) come back as JSON problem details
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info  # nothing else is exposed over HTTP
+  endpoint:
+    health:
+      show-details: always     # shows db / disk status; restrict (when-authorized) once there is auth
+      probes:
+        enabled: true          # /actuator/health/liveness and /actuator/health/readiness
+  info:
+    java:
+      enabled: true
+
+# Logs are plain text by default (readable on a terminal). For log tools, switch the console to JSON (Elastic Common
+# Schema), which also adds the worker's batchId / payloadIdx / attempt context to every line as fields:
+#   LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs   (docker-compose.yml sets this for the app container)
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html     # redirects to /swagger-ui/index.html
+  api-docs:
+    path: /v3/api-docs
+
+sift:
+  max-payload-size: 64MB       # one payload is held in memory while it is saved, so mind your heap
+  max-batch-size: 512MB
+  max-payloads-per-batch: 10000
+  cors:
+    # browser origins allowed to call /v1/** (the React dashboard). Vite dev server = 5173, Create React App = 3000.
+    # In other environments set SIFT_CORS_ALLOWED_ORIGINS=https://dashboard.example.com (comma-separated)
+    allowed-origins: http://localhost:5173, http://localhost:3000
+    max-age: 1h
+  worker:
+    enabled: true              # set false to run an upload-only instance
+    poll-interval: 500ms       # pause between queue checks when there is nothing to do
+    lease: 5m                  # a claimed payload is re-claimed after this if its worker died
+    max-attempts: 3
+    retry-backoff: 10s         # x attempt number

@@ -1,0 +1,52 @@
+{"properties": [
+  {
+    "name": "sift.max-payload-size",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.max-payload-size'"
+  },
+  {
+    "name": "sift.max-batch-size",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.max-batch-size'"
+  },
+  {
+    "name": "sift.max-payloads-per-batch",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.max-payloads-per-batch'"
+  },
+  {
+    "name": "sift.worker.enabled",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.worker.enabled'"
+  },
+  {
+    "name": "sift.worker.lease",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.worker.lease'"
+  },
+  {
+    "name": "sift.worker.poll-interval",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.worker.poll-interval'"
+  },
+  {
+    "name": "sift.worker.max-attempts",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.worker.max-attempts'"
+  },
+  {
+    "name": "sift.worker.retry-backoff",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.worker.retry-backoff'"
+  },
+  {
+    "name": "sift.cors.allowed-origins",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.cors.allowed-origins'"
+  },
+  {
+    "name": "sift.cors.max-age",
+    "type": "java.lang.String",
+    "description": "A description for 'sift.cors.max-age'"
+  }
+]}

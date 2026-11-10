@@ -1,0 +1,9 @@
+# Keep Linux-executed / shell files on LF even when Windows git is set to autocrlf,
+# otherwise they break inside containers or Git Bash ("\r: command not found").
+* text=auto
+*.sh   text eol=lf
+*.py   text eol=lf
+*.yml  text eol=lf
+*.sql  text eol=lf
+Dockerfile text eol=lf
+*.bin  binary
