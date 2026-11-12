@@ -3,15 +3,17 @@
 Upload binary payloads, let a background worker find the JSON inside each one and record its keys, then read the
 results.
 
+![alt text](image.png)
+
 ```
-client ──POST /v1/batches──▶ UploadService ──▶ batch + payload (status = pending)
+client ──▶ POST /v1/batches ──▶ UploadService ──▶ batch + payload (status = pending)
                                                         │
                        ExtractionWorker ◀── claim (SKIP LOCKED) ──┘
                               │ KeyExtractor
                               ▼
                        json_document + json_key, payload.status = done | failed
-                                                        │
-client ──GET /v1/batches/{id}──▶ BatchQueryService ◀────┘
+                                                             │ 
+client ──▶ GET /v1/batches/{id} ──▶ BatchQueryService ◀────┘
 ```
 
 The React dashboard is a separate project (`https://github.com/supngo/sift-fe`). Start this backend first, then run `npm run dev` there.
@@ -54,6 +56,8 @@ The worker handles about 200 payloads a second locally, so 3,000 payloads stay b
 
 ```bash
 java scripts/MakeFrame.java --repeat 1000 slow.bin scripts/samples/payload_a.hex scripts/samples/payload_b.hex scripts/samples/payload_c.hex
+
+# big payload
 curl -i -X POST http://localhost:8080/v1/batches -H "Content-Type: application/x-sift-batch" --data-binary "@scripts/payload/slow.bin"
 ```
 
