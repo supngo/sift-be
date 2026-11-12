@@ -14,7 +14,11 @@ client ──POST /v1/batches──▶ UploadService ──▶ batch + payload (
 client ──GET /v1/batches/{id}──▶ BatchQueryService ◀────┘
 ```
 
-The React dashboard is a separate project (`C:\Users\supng\Work\sift-ui`). Start this backend first, then run `npm run dev` there.
+The React dashboard is a separate project (`https://github.com/supngo/sift-fe`). Start this backend first, then run `npm run dev` there.
+
+## Requirements
+1. Java 21
+2. Docker
 
 ## Run it
 
@@ -23,6 +27,9 @@ docker compose up --build
 ```
 
 If you ran the earlier full project, reset its old database first (the migration changed): `docker compose down -v`.
+
+### Sample Payloads
+Sample payloads are in `scripts/payload`
 
 ### Try it
 
@@ -39,6 +46,15 @@ curl -i -X POST http://localhost:8080/v1/batches -H "Content-Type: application/x
 
 # one payload
 curl -i -X POST http://localhost:8080/v1/batches -H "Content-Type: application/octet-stream" --data-binary "@scripts/payload/a.bin"
+```
+
+To watch payloads sit in `pending` (e.g. in the dashboard), send a big batch. `--repeat N` repeats the input list N times.
+The worker handles about 200 payloads a second locally, so 3,000 payloads stay busy for roughly 15-20 seconds
+(the maximum is 10,000 per batch):
+
+```bash
+java scripts/MakeFrame.java --repeat 1000 slow.bin scripts/samples/payload_a.hex scripts/samples/payload_b.hex scripts/samples/payload_c.hex
+curl -i -X POST http://localhost:8080/v1/batches -H "Content-Type: application/x-sift-batch" --data-binary "@scripts/payload/slow.bin"
 ```
 
 Response: `202 Accepted` with `{ "batchId": "b_1a2b3c4d5e6f", "payloadCount": 3 }`.

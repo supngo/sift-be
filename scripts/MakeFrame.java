@@ -17,6 +17,9 @@ import java.util.List;
  *
  *   # exactly one payload, raw bytes       -> use Content-Type: application/octet-stream
  *   java scripts/MakeFrame.java --raw a.bin scripts/samples/payload_a.hex
+ *
+ *   # a big batch (the input list repeated N times), slow enough to watch "pending" in the dashboard
+ *   java scripts/MakeFrame.java --repeat 1000 slow.bin scripts/samples/payload_a.hex scripts/samples/payload_b.hex scripts/samples/payload_c.hex
  * </pre>
  *
  * Inputs ending in {@code .hex} are read as hex text (whitespace ignored); anything else is read as raw bytes.
@@ -33,24 +36,32 @@ public class MakeFrame {
 
     public static void main(String[] argv) throws IOException {
         boolean raw = false;
+        int repeat = 1;
         List<String> args = new ArrayList<>();
-        for (String a : argv) {
-            if (a.equals("--raw")) {
+        for (int i = 0; i < argv.length; i++) {
+            if (argv[i].equals("--raw")) {
                 raw = true;
+            } else if (argv[i].equals("--repeat") && i + 1 < argv.length) {
+                repeat = Integer.parseInt(argv[++i]);
             } else {
-                args.add(a);
+                args.add(argv[i]);
             }
         }
-        if (args.size() < 2) {
+        if (args.size() < 2 || repeat < 1) {
             exit("""
-                    usage: java scripts/MakeFrame.java [--raw] <output> <input>...
+                    usage: java scripts/MakeFrame.java [--raw] [--repeat N] <output> <input>...
                       java scripts/MakeFrame.java batch.bin scripts/samples/payload_a.hex scripts/samples/payload_b.hex
-                      java scripts/MakeFrame.java --raw a.bin scripts/samples/payload_a.hex""");
+                      java scripts/MakeFrame.java --raw a.bin scripts/samples/payload_a.hex
+                      java scripts/MakeFrame.java --repeat 1000 slow.bin scripts/samples/payload_a.hex   (1000 payloads)""");
         }
 
-        List<byte[]> payloads = new ArrayList<>();
+        List<byte[]> inputs = new ArrayList<>();
         for (String input : args.subList(1, args.size())) {
-            payloads.add(load(Path.of(input)));
+            inputs.add(load(Path.of(input)));
+        }
+        List<byte[]> payloads = new ArrayList<>();
+        for (int r = 0; r < repeat; r++) {
+            payloads.addAll(inputs); // the input list, N times over
         }
 
         byte[] data;
