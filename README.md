@@ -18,6 +18,14 @@ client ──▶ GET /v1/batches/{id} ──▶ BatchQueryService ◀───�
 
 The React dashboard is a separate project (`https://github.com/supngo/sift-fe`). Start this backend first, then run `npm run dev` there.
 
+## AI Helps
+This application is aided by `Claude code`.
+1. Built the Worker (`ExtractionWorker.java`) that pick up the task in database and handled all the errors
+2. Build the Extractor (`KeyExtractor.java`) to parse the payload and extract the keys
+3. Build the Reader (`BatchFrameReader.java`) to read the batches and save them into the database
+4. Dockerized the app
+5. Implemented Unit test
+
 ## Requirements
 1. Java 21
 2. Docker
