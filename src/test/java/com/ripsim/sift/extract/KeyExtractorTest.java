@@ -103,6 +103,35 @@ class KeyExtractorTest {
     void noJsonAtAll() {
         ExtractionResult r = extractor.extract(new byte[]{0, 1, 2, 3});
         assertThat(r.documents()).isEmpty();
+        assertThat(r.warnings()).containsExactly(KeyExtractor.NO_JSON_FOUND);
+    }
+
+    @Test
+    void onlyEmptyObjects_warnsNoKeysFound() {
+        ExtractionResult r = extract("{} [] [1,2,3] \"just a string\" 42 true null { }");
+        assertThat(r.documents()).isEmpty();
+        assertThat(r.warnings()).containsExactly(KeyExtractor.NO_KEYS_FOUND);
+    }
+
+    @Test
+    void latin1Key_warnsInvalidUtf8_andNoJsonFound() {
+        byte[] latin1 = "{\"café\":\"crème\",\"qty\":5}".getBytes(StandardCharsets.ISO_8859_1);
+        ExtractionResult r = extractor.extract(latin1);
+        assertThat(r.documents()).isEmpty();
+        assertThat(r.warnings()).containsExactly(KeyExtractor.INVALID_UTF8, KeyExtractor.NO_JSON_FOUND);
+    }
+
+    @Test
+    void invalidUtf8Candidate_beforeAValidDocument_stillWarns() {
+        byte[] data = "{\"é\":1} {\"ok\":1}".getBytes(StandardCharsets.ISO_8859_1);
+        ExtractionResult r = extractor.extract(data);
+        assertThat(r.keyNames()).containsExactly("ok");
+        assertThat(r.warnings()).containsExactly(KeyExtractor.INVALID_UTF8);
+    }
+
+    @Test
+    void otherInvalidJson_doesNotWarnInvalidUtf8() {
+        ExtractionResult r = extract("{'a':1} {\"ok\":1}");
         assertThat(r.warnings()).isEmpty();
     }
 
@@ -149,6 +178,9 @@ class KeyExtractorTest {
         assertThat(extractor.extract(overlong).documents()).isEmpty();
         assertThat(extractor.extract(badContinuation).documents()).isEmpty();
         assertThat(extractor.extract(encodedSurrogate).documents()).isEmpty();
+        assertThat(extractor.extract(overlong).warnings()).contains(KeyExtractor.INVALID_UTF8);
+        assertThat(extractor.extract(badContinuation).warnings()).contains(KeyExtractor.INVALID_UTF8);
+        assertThat(extractor.extract(encodedSurrogate).warnings()).contains(KeyExtractor.INVALID_UTF8);
     }
 
     @Test

@@ -46,6 +46,15 @@ public final class KeyExtractor {
     public static final String PATH_TRUNCATED = "PATH_TRUNCATED";
     public static final String TOO_MANY_KEYS = "TOO_MANY_KEYS";
 
+    /** Warnings that explain an empty or thin result. They are informational: the payload still completes as done. */
+    public static final String NO_JSON_FOUND = "NO_JSON_FOUND";     // no JSON object anywhere in the payload
+    public static final String NO_KEYS_FOUND = "NO_KEYS_FOUND";     // JSON objects found, but all of them empty
+    public static final String INVALID_UTF8 = "INVALID_UTF8";       // a candidate was rejected on a non-UTF-8 byte
+
+    /** The warnings that mean a limit was hit, so the keys reported may be incomplete. */
+    public static final Set<String> LIMIT_WARNINGS =
+            Set.of(SCAN_BUDGET_EXCEEDED, DEPTH_LIMIT_EXCEEDED, KEY_TRUNCATED, PATH_TRUNCATED, TOO_MANY_KEYS);
+
     /**
      * @param maxDepth           maximum nesting of objects and arrays; deeper candidates are rejected
      * @param maxKeyLength       key names longer than this (in chars) are stored truncated
@@ -80,10 +89,12 @@ public final class KeyExtractor {
         private final List<JsonDocument> documents = new ArrayList<>();
         private final Set<String> warnings = new LinkedHashSet<>();
         private int committedPaths;
+        private boolean sawObject; // a complete object was parsed, even an empty one
 
         // state of the current candidate
         private int pos;
         private boolean eof;
+        private boolean invalidUtf8;
         private Map<String, JsonKey> keys;
         private final Set<String> attemptWarnings = new LinkedHashSet<>();
         private final StringBuilder name = new StringBuilder();
@@ -106,9 +117,13 @@ public final class KeyExtractor {
                 attemptWarnings.clear();
                 pos = i;
                 eof = false;
+                invalidUtf8 = false;
                 boolean complete = parseObject(1, 1, "");
                 work += Math.max(1, pos - i);
 
+                if (complete) {
+                    sawObject = true;
+                }
                 if (complete || eof) {
                     if (!keys.isEmpty()) {
                         documents.add(new JsonDocument(i, Math.min(pos, n), !complete, List.copyOf(keys.values())));
@@ -120,8 +135,14 @@ public final class KeyExtractor {
                     }
                     i = nextBrace(pos);
                 } else {
+                    if (invalidUtf8) {
+                        warnings.add(INVALID_UTF8);
+                    }
                     i = nextBrace(i + 1);
                 }
+            }
+            if (documents.isEmpty()) {
+                warnings.add(sawObject ? NO_KEYS_FOUND : NO_JSON_FOUND);
             }
             return new ExtractionResult(List.copyOf(documents), List.copyOf(warnings));
         }
@@ -371,7 +392,7 @@ public final class KeyExtractor {
                     len = 4;
                     cp = c & 0x07;
                 } else {
-                    return false; // not a valid UTF-8 lead byte
+                    return badUtf8(); // not a valid UTF-8 lead byte
                 }
                 if (pos + len > n) {
                     return truncated();
@@ -379,15 +400,15 @@ public final class KeyExtractor {
                 for (int k = 1; k < len; k++) {
                     int cc = b[pos + k] & 0xFF;
                     if ((cc & 0xC0) != 0x80) {
-                        return false;
+                        return badUtf8();
                     }
                     cp = (cp << 6) | (cc & 0x3F);
                 }
                 if (len == 3 && (cp < 0x800 || (cp >= 0xD800 && cp <= 0xDFFF))) {
-                    return false; // overlong encoding or encoded surrogate
+                    return badUtf8(); // overlong encoding or encoded surrogate
                 }
                 if (len == 4 && (cp < 0x10000 || cp > 0x10FFFF)) {
-                    return false;
+                    return badUtf8();
                 }
                 if (capture) {
                     if (cp >= 0x10000) {
@@ -403,6 +424,12 @@ public final class KeyExtractor {
         }
 
         // ---- helpers ----
+
+        /** Rejects the candidate because a string holds bytes that are not UTF-8 (often Latin-1 text). */
+        private boolean badUtf8() {
+            invalidUtf8 = true;
+            return false;
+        }
 
         private boolean truncated() {
             eof = true;

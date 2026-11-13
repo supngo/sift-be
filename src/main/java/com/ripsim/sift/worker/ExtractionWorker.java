@@ -5,6 +5,7 @@ import com.ripsim.sift.extract.KeyExtractor;
 import com.ripsim.sift.models.ExtractionResult;
 import com.ripsim.sift.persistence.ExtractionQueueRepository;
 import com.ripsim.sift.persistence.ExtractionQueueRepository.ClaimedPayload;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,15 +77,16 @@ public class ExtractionWorker {
             if (queue.complete(p.id(), p.attempt(), result)) {
                 long nanos = System.nanoTime() - started;
                 if (result.documents().isEmpty()) {
-                    log.warn("Payload {}: no JSON found in {} bytes", where, p.content().length);
+                    log.warn("Payload {}: no keys found in {} bytes, warnings {}", where, p.content().length,
+                            result.warnings());
                 } else {
                     log.info("Extracted payload {}: {} bytes, {} document(s), {} key(s){} in {} ms", where,
                             p.content().length, result.documents().size(), result.keyNames().size(),
                             result.warnings().isEmpty() ? "" : ", warnings " + result.warnings(), nanos / 1_000_000);
                 }
-                if (!result.warnings().isEmpty()) {
-                    log.warn("Payload {} hit extractor limits {}; the result may be incomplete", where,
-                            result.warnings());
+                List<String> limits = result.warnings().stream().filter(KeyExtractor.LIMIT_WARNINGS::contains).toList();
+                if (!limits.isEmpty()) {
+                    log.warn("Payload {} hit extractor limits {}; the result may be incomplete", where, limits);
                 }
             } else {
                 log.warn("Payload {} attempt {} finished after its lease expired; result discarded", where, p.attempt());

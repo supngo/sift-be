@@ -119,7 +119,10 @@ No other actuator endpoints are exposed.
 
 **Per payload:** `GET /v1/batches/{batchId}` shows each payload's `status` (`done` / `failed`), `error.code` and
 `error.message` when it failed, and `warnings` when the extractor hit a limit (keys may be incomplete). A payload with
-`keys: []` finished but found no JSON.
+`keys: []` finished but found nothing, and its `warnings` say why: `NO_JSON_FOUND` (no JSON object at all) or
+`NO_KEYS_FOUND` (only empty objects like `{}`). `INVALID_UTF8` means a candidate object was dropped because a string
+held bytes that aren't UTF-8, typically Latin-1 text such as `café`. These three are informational: the payload is
+still `done`. The same codes are stored in `payload.warnings`.
 
 **Logs:** every worker line names the batch and payload. Under Docker Compose the logs are JSON (Elastic Common
 Schema) with `batchId`, `payloadIdx` and `attempt` as fields, ready for Loki / ELK; set `LOG_FORMAT=logstash` for

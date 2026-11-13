@@ -49,6 +49,7 @@ class ExtractionIT {
         String body = awaitCompleted(upload("application/octet-stream", new byte[]{0, 1, 2, '{', 3}));
         assertThat((String) JsonPath.read(body, "$.extracts[0].status")).isEqualTo("done");
         assertThat((List<String>) JsonPath.read(body, "$.extracts[0].keys")).isEmpty();
+        assertThat((List<String>) JsonPath.read(body, "$.extracts[0].warnings")).containsExactly("NO_JSON_FOUND");
     }
 
     @SuppressWarnings("unchecked")
